@@ -12,6 +12,6 @@ def score_func(label, prediction, recall_precision_ratio=1.0):
 
 default_scorer = make_scorer(score_func, greater_is_better=True)
 recall_scorer = make_scorer(score_func, greater_is_better=True,
-                            recall_precision_ratio=2.0)
+                            recall_precision_ratio=5.0)
 precision_scorer = make_scorer(score_func, greater_is_better=True,
-                               recall_precision_ratio=0.5)
+                               recall_precision_ratio=2.0/3.0)

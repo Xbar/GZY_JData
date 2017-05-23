@@ -29,7 +29,7 @@ class ProductClassifier(Action):
         group_data = self.data.groupby('user_id')
         for name, group in group_data:
             if cate in group['cate'].values:
-                sku_ids = group['sku_id']
+                sku_ids = np.unique(group['sku_id'])
                 interest = []
 #                others = []
                 for sku_id in sku_ids:
@@ -82,4 +82,26 @@ class ProductClassifier(Action):
             user_items.loc[name, 'items'] = sku_list
         return user_items
             
+    def calc_proba(self, cate=8):
+        idx = np.setdiff1d(self.assoc_table.index, self.assoc_table.columns)
+        self.prob_table = self.assoc_table.loc[idx].copy()
+        cate_buy = np.zeros(len(self.prob_table.columns))
+        for idx, col in enumerate(self.prob_table):
+            cate_buy[idx] = self.prob_table.loc[col, col]
         
+        self.prob_table /= cate_buy
+        
+        other_buy = self.data.groupby('sku_id')['user_id'].nunique()
+        other_buy.name = 'other'
+        self.prob_table = self.prob_table.join(other_buy, how='left')
+        
+        other_user_num = self.data.loc[self.data['cate'] != cate, 'user_id'].nunique()
+        self.prob_table['other'] /= other_user_num
+        
+    def get_proba(self, buy_sku_list):
+        buy_sku_list = np.intersect1d(buy_sku_list, self.prob_table.index)                   
+        sub_table = self.prob_table.loc[buy_sku_list, :]
+        prob = np.prod(sub_table)
+        prob /= np.sum(prob)
+        return prob
+    
